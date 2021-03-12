@@ -1,0 +1,109 @@
+%{
+  void yyerror(const char *s);
+  #include <stdio.h>
+  #include <stdlib.h>
+  extern FILE* yyin;
+  int yylex();
+%}
+
+%token PROGRAM VAR IF ELSE PRINT TYPE MULOP
+%token ADOP STRING INTEGER FLOAT IDENTIFIER
+%token LT GT NE
+
+%start programa
+
+%%
+
+vars: 
+  | 'var' var_declaration
+  ;
+
+var_declaration: vars_declaration_1
+  | vars_declaration_1 var_declaration
+  ;
+
+vars_declaration_1: var_list ':' TYPE ';'
+  ;
+
+var_list: IDENTIFIER
+  | IDENTIFIER ',' var_list
+  ;
+
+cte: IDENTIFIER
+  | INTEGER
+  | FLOAT
+  ;
+
+factor: '(' expresion ')'
+  | ADOP cte
+  | cte
+  ;
+
+termino: termino MULOP factor
+  | factor
+  ;
+
+exp: exp ADOP termino
+  | termino
+  ;
+
+conditional_exp: GT exp
+  | LT exp
+  | NE exp
+  ;
+
+expresion: exp
+  | exp conditional_exp
+  ;
+
+bloque_body: bloque_body estatuto
+  | estatuto
+  ;
+
+bloque: '{' bloque_body '}' 
+  ;
+
+print_stmt: expresion
+  | STRING
+  ;
+
+escritura: PRINT '(' print_list ')' ';'
+  ;
+
+print_list: print_stmt ',' print_list
+  | print_stmt
+  ;
+
+asignacion: IDENTIFIER '=' expresion ';'
+  ;
+
+else_condicion: ELSE bloque
+  ;
+
+condicion: IF '(' expresion ')' bloque condicion_1
+  ;
+
+condicion_1: else_condicion ';'
+  | ';'
+  ;
+
+estatuto: asignacion
+  | condicion
+  | escritura
+  ;
+
+programa: PROGRAM IDENTIFIER ':' vars bloque
+  ;
+bloque {printf("ok!");}
+%%
+
+int main() {
+	yyin = fopen("./test.txt", "r");;
+
+	return 	yyparse();
+}
+
+void yyerror(const char* s) {
+	fprintf(stderr, "Parse error: %s\n", s);
+	exit(1);
+}
